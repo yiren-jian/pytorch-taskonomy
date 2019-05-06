@@ -17,7 +17,7 @@ from models.encoder import encoder8x16x16
 from models.decoder import decoder1000
 from models.encoder_decoder import EncoderDecoder
 
-from taskonomy_dataset import TaskonomyDataset, TaskonomyDatasetAmir
+from taskonomy_dataset import TaskonomyDatasetClass1000, TaskonomyDatasetClass1000Amir
 from utils.metrics import runningScore
 
 import os
@@ -38,6 +38,7 @@ parser.add_argument('--test_batch', default=32, type=int)
 parser.add_argument('--epochs', default=30, type=int)
 parser.add_argument('--lr', default=0.0005, type=float)
 parser.add_argument('--resume', action='store_true')
+parser.add_argument('--brenta', action='store_true')
 args = parser.parse_args()
 
 num_classes = 1000
@@ -49,13 +50,19 @@ def main():
                                               transforms.Normalize((0.5456, 0.5176, 0.4863),
                                                                    (0.1825, 0.1965, 0.2172))])
     if args.mode == 'my':
-        taskonomy_testset = TaskonomyDataset('./dataloader_csv/tiny_taskonomy_class_1000_test.csv',
-                                             resize256 = True,
-                                             transform=taskonomy_transform)
+        taskonomy_testset = TaskonomyDatasetClass1000('../data/tiny5k_taskonomy_rgb_test.csv',
+                                                      '/class_object',
+                                                      'class_object.npy',
+                                                       resize256 = True,
+                                                       transform=taskonomy_transform,
+                                                       brenta = args.brenta)
     elif args.mode == 'Amir':
-        taskonomy_testset = TaskonomyDatasetAmir('./dataloader_csv/tiny5k_taskonomy_class_1000_test.csv',
-                                                 resize256 = True,
-                                                 transform=taskonomy_transform)
+        taskonomy_testset = TaskonomyDatasetClass1000Amir('../data/tiny5k_taskonomy_rgb_test.csv',
+                                                          '/class_object',
+                                                          'class_object.npy',
+                                                          resize256 = True,
+                                                          transform=taskonomy_transform,
+                                                          brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
                                                        shuffle=False,
