@@ -110,7 +110,11 @@ class TaskonomyDatasetClass1000Amir(torch.utils.data.Dataset):
         self.brenta = brenta
 
     def __getitem__(self, idx):
-        target_name = self.images_frame.iloc[idx, 1]
+        rgb_name = self.images_frame.iloc[idx, 0]
+        if self.brenta == True:
+            rgb_name = rgb_name.replace('/home/yiren/datasets', '/home/brenta/scratch/data')
+        target_name = rgb_name.replace('/rgb', self.task_folder).replace('rgb.png', self.task_extension)
+        
         target = np.load(target_name)
         target = torch.from_numpy(target)
 

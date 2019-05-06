@@ -98,47 +98,6 @@ def main():
     elif args.mode == 'Amir':
         AmirValidation(taskonomy_testloader, criterion)
 
-def train(epoch, trainloader, model, optimizer, criterion):
-    model.train()
-    running_loss = 0.0
-    total = 0
-    end = time.time()
-
-    for param_group in optimizer.param_groups:
-        LR = param_group['lr']
-
-    with tqdm(total=len(trainloader), unit=' batch(s)') as bar:
-        bar.set_description('Training epoch: %d' % epoch)
-        for i, data in enumerate(trainloader, 0):
-            # get the inputs
-            images, targets, idxs = data
-            images, targets = images.to('cuda'), targets.to('cuda')
-
-            # forward + backward + optimize
-            outputs = model(images)
-            logprobs = nn.LogSoftmax(dim=1)(outputs)
-            loss = criterion(logprobs, targets)
-
-            # zero the parameter gradients
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            # print statistics
-            running_loss += loss.item()
-            total += 1
-
-            # measure elapsed time
-            batch_time = (time.time() - end)
-
-            # progress bar in tqdm
-            bar.set_postfix(time='{:03.1f}'.format(batch_time),
-                            loss='{:05.4f}'.format(running_loss/total),
-                            lr='{:03.1e}'.format(LR))
-            bar.update()
-
-    return running_loss / total
-
 
 def MyValidation(testloader, model, criterion):
     model.eval()
