@@ -125,3 +125,4 @@ dmypy.json
 # pytorch-taskonomy
 *.DS_Store
 *.pth
+._*
