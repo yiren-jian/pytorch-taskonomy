@@ -65,6 +65,7 @@ class TaskonomyDatasetSemSeg(torch.utils.data.Dataset):
         if self.brenta == True:
             rgb_name = rgb_name.replace('/home/yiren/datasets', '/home/brenta/scratch/data')
         target_name = rgb_name.replace('/rgb', self.task_folder).replace('rgb.png', self.task_extension)
+        
         image = Image.open(rgb_name)
         if self.resize256 == True:
             image.thumbnail((256,256))

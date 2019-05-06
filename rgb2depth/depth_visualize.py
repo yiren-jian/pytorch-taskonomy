@@ -18,7 +18,7 @@ from models.encoder import encoder8x16x16
 from models.decoder import decoder256x256
 from models.encoder_decoder import EncoderDecoder
 
-from taskonomy_dataset import TaskonomyDataset
+from taskonomy_dataset import TaskonomyDatasetZbuffer
 from utils.metrics import runningScore
 
 from PIL import Image
@@ -44,6 +44,7 @@ parser.add_argument('--test_batch', default=4, type=int)
 parser.add_argument('--epochs', default=30, type=int)
 parser.add_argument('--lr', default=0.0005, type=float)
 parser.add_argument('--resume', action='store_true')
+parser.add_argument('--brenta', action='store_true')
 parser.add_argument('--shuffle', action='store_true', default=False)
 args = parser.parse_args()
 
@@ -55,15 +56,18 @@ def main():
     taskonomy_transform = transforms.Compose([transforms.ToTensor(),
                                               transforms.Normalize((0.5456, 0.5176, 0.4863),
                                                                    (0.1825, 0.1965, 0.2172))])
-    taskonomy_testset = TaskonomyDataset('./dataloader_csv/tiny_taskonomy_rgb2depth_test.csv',
-                                         resize256 = True,
-                                         transform=taskonomy_transform)
+    taskonomy_testset = TaskonomyDatasetZbuffer('../data/tiny_taskonomy_rgb_test.csv',
+                                                '/depth_zbuffer',
+                                                'depth_zbuffer.png',
+                                                resize256 = True,
+                                                transform=taskonomy_transform,
+                                                brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=args.shuffle,
+                                                       shuffle=True,
                                                        num_workers=8)
 
-    taskonomy_testframe = pd.read_csv('./dataloader_csv/tiny_taskonomy_rgb2depth_test.csv', delimiter=' ')
+    taskonomy_testframe = pd.read_csv('../data/tiny_taskonomy_rgb_test.csv', delimiter=' ')
     # Define the loss function for different tasks.
     criterion = nn.L1Loss()
 
@@ -124,7 +128,7 @@ def main():
         plt.axis('off')
 
     plt.show()
-    plt.savefig('demo.png', dpi=400)
+    plt.savefig('demo.png', dpi=300)
 
 
 

@@ -17,7 +17,7 @@ from models.encoder import encoder8x16x16
 from models.decoder import decoder256x256
 from models.encoder_decoder import EncoderDecoder
 
-from taskonomy_dataset import TaskonomyDataset, TaskonomyDatasetAmir
+from taskonomy_dataset import TaskonomyDatasetZbuffer, TaskonomyDatasetZbufferAmir
 from utils.metrics import runningScore
 
 import os
@@ -38,6 +38,7 @@ parser.add_argument('--test_batch', default=32, type=int)
 parser.add_argument('--epochs', default=15, type=int)
 parser.add_argument('--lr', default=0.0005, type=float)
 parser.add_argument('--resume', action='store_true')
+parser.add_argument('--brenta', action='store_true')
 args = parser.parse_args()
 
 num_classes = 1
@@ -45,20 +46,28 @@ ckpt = './checkpoints/rgb2depth-ckpt.pth'
 best = './checkpoints/rgb2depth-best.pth'
 
 def main():
+    assert args.mode=='my' or args.mode=='Amir', 'mode has to be my or Amir!'
+
     taskonomy_transform = transforms.Compose([transforms.ToTensor(),
                                               transforms.Normalize((0.5456, 0.5176, 0.4863),
                                                                    (0.1825, 0.1965, 0.2172))])
     if args.mode == 'my':
-        taskonomy_testset = TaskonomyDataset('./dataloader_csv/tiny5k_taskonomy_rgb2depth_test.csv',
-                                             resize256 = True,
-                                             transform=taskonomy_transform)
-    elif args.mode == 'Amir':
-        taskonomy_testset = TaskonomyDatasetAmir('./dataloader_csv/tiny5k_taskonomy_rgb2depth_test.csv',
-                                                 resize256 = True,
-                                                 transform=taskonomy_transform)
+        taskonomy_testset = TaskonomyDatasetZbuffer('../data/tiny5k_taskonomy_rgb_test.csv',
+                                                    '/depth_zbuffer',
+                                                    'depth_zbuffer.png',
+                                                    resize256 = True,
+                                                    transform=taskonomy_transform,
+                                                    brenta = args.brenta)
+    if args.mode == 'Amir':
+        taskonomy_testset = TaskonomyDatasetZbufferAmir('../data/tiny5k_taskonomy_rgb_test.csv',
+                                                        '/depth_zbuffer',
+                                                        'depth_zbuffer.png',
+                                                        resize256 = True,
+                                                        transform=taskonomy_transform,
+                                                        brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=False,
+                                                       shuffle=True,
                                                        num_workers=8)
 
     criterion = nn.L1Loss()
@@ -95,7 +104,7 @@ def MyValidation(testloader, model, criterion):
     running_loss = 0.0
     total = 0
     end = time.time()
-    
+
     with torch.no_grad():
         with tqdm(total=len(testloader), unit=' batch(s)') as bar:
             bar.set_description('Testing:')
@@ -104,24 +113,24 @@ def MyValidation(testloader, model, criterion):
                 # keep targets with shape [N,1,h,w]
                 targets = targets.unsqueeze(dim=1)
                 targets = targets.to('cuda')
-                
+
                 outputs = model(images)
                 loss = criterion(outputs, targets)
-                
+
                 # print statistics
                 running_loss += loss.item()
                 total += 1
-                
+
                 # measure elapsed time
                 batch_time = (time.time() - end)
-                
+
                 # progress bar in tqdm
                 bar.set_postfix(time='{:03.1f}'.format(batch_time),
                                 loss='{:06.4f}'.format(running_loss/total))
                 bar.update()
 
     mean_loss = running_loss/total
-    
+
     return mean_loss
 
 
@@ -129,23 +138,23 @@ def AmirValidation(testloader, criterion):
     running_loss = 0.0
     total = 0.0
     end = time.time()
-    
+
     with torch.no_grad():
         with tqdm(total=len(testloader), unit=' batch(s)') as bar:
             bar.set_description('Testing:')
             for i, (targets, preds, idxs) in enumerate(testloader):
-                
+
                 targets = targets.to('cuda')
                 preds = preds.to('cuda')
-                
+
                 loss = criterion(preds, targets)
-                
+
                 running_loss += loss.item()
                 total += 1
-                
+
                 # measure elapsed time
                 batch_time = (time.time() - end)
-                
+
                 # progress bar in tqdm
                 bar.set_postfix(time='{:03.1f}'.format(batch_time),
                                 loss='{:05.4f}'.format(running_loss/total))

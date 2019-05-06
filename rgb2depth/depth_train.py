@@ -17,7 +17,7 @@ from models.encoder import encoder8x16x16
 from models.decoder import decoder256x256
 from models.encoder_decoder import EncoderDecoder
 
-from taskonomy_dataset import TaskonomyDataset
+from taskonomy_dataset import TaskonomyDatasetZbuffer
 from utils.metrics import runningScore
 
 import os
@@ -32,43 +32,43 @@ if not sys.warnoptions:
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', default='cuda', type=str)
-parser.add_argument('--datasize', default='tiny', type=str)
 parser.add_argument('--train_batch', default=32, type=int)
 parser.add_argument('--test_batch', default=32, type=int)
 parser.add_argument('--epochs', default=15, type=int)
 parser.add_argument('--lr', default=0.0005, type=float)
 parser.add_argument('--resume', action='store_true')
+parser.add_argument('--brenta', action='store_true')
 args = parser.parse_args()
 
 num_classes = 1
+if os.path.isdir('./checkpoints') == False:
+    os.makedirs('./checkpoints')
 ckpt = './checkpoints/rgb2depth-ckpt.pth'
 best = './checkpoints/rgb2depth-best.pth'
 
 def main():
-    if args.datasize == 'tiny':
-        traincsv = './dataloader_csv/tiny_taskonomy_rgb2depth_train.csv'
-        testcsv = './dataloader_csv/tiny_taskonomy_rgb2depth_test.csv'
-    elif args.datasize == 'sample':
-        traincsv = './dataloader_csv/sample_rgb2depth_train.csv'
-        testcsv = './dataloader_csv/sample_rgb2depth_test.csv'
-
-
     taskonomy_transform = transforms.Compose([transforms.ToTensor(),
                                               transforms.Normalize((0.5456, 0.5176, 0.4863),
                                                                    (0.1825, 0.1965, 0.2172))])
-    taskonomy_trainset = TaskonomyDataset(traincsv,
-                                          resize256 = True,
-                                          transform=taskonomy_transform)
+    taskonomy_trainset = TaskonomyDatasetZbuffer('../data/tiny_taskonomy_rgb_train.csv',
+                                                 '/depth_zbuffer',
+                                                 'depth_zbuffer.png',
+                                                 resize256 = True,
+                                                 transform=taskonomy_transform,
+                                                 brenta = args.brenta)
     taskonomy_trainloader = torch.utils.data.DataLoader(taskonomy_trainset,
                                                         batch_size=args.train_batch,
                                                         shuffle=True,
                                                         num_workers=8)
-    taskonomy_testset = TaskonomyDataset(testcsv,
-                                         resize256 = True,
-                                         transform=taskonomy_transform)
+    taskonomy_testset = TaskonomyDatasetZbuffer('../data/tiny_taskonomy_rgb_test.csv',
+                                                '/depth_zbuffer',
+                                                'depth_zbuffer.png',
+                                                resize256 = True,
+                                                transform=taskonomy_transform,
+                                                brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=False,
+                                                       shuffle=True,
                                                        num_workers=8)
 
     # Define the loss function for different tasks.
