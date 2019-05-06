@@ -17,7 +17,7 @@ from models.encoder import encoder8x16x16
 from models.decoder import decoder256x256
 from models.encoder_decoder import EncoderDecoder
 
-from taskonomy_dataset import TaskonomyDataset
+from taskonomy_dataset import TaskonomyDatasetAutoencoder
 from utils.metrics import runningScore
 
 import os
@@ -37,9 +37,12 @@ parser.add_argument('--test_batch', default=32, type=int)
 parser.add_argument('--epochs', default=15, type=int)
 parser.add_argument('--lr', default=0.0005, type=float)
 parser.add_argument('--resume', action='store_true')
+parser.add_argument('--brenta', action='store_true')
 args = parser.parse_args()
 
 num_classes = 3
+if os.path.isdir('./checkpoints') == False:
+    os.makedirs('./checkpoints')
 ckpt = './checkpoints/autoencoder-ckpt.pth'
 best = './checkpoints/autoencoder-best.pth'
 
@@ -47,19 +50,25 @@ def main():
     taskonomy_transform = transforms.Compose([transforms.ToTensor(),
                                               transforms.Normalize((0.5456, 0.5176, 0.4863),
                                                                    (0.1825, 0.1965, 0.2172))])
-    taskonomy_trainset = TaskonomyDataset('./dataloader_csv/tiny_taskonomy_autoencoder_train.csv',
-                                          resize256 = True,
-                                          transform=taskonomy_transform)
+    taskonomy_trainset = TaskonomyDatasetAutoencoder('../data/tiny_taskonomy_rgb_train.csv',
+                                                     '/rgb',
+                                                     'rgb.png',
+                                                     resize256 = True,
+                                                     transform=taskonomy_transform,
+                                                     brenta = args.brenta)
     taskonomy_trainloader = torch.utils.data.DataLoader(taskonomy_trainset,
                                                         batch_size=args.train_batch,
                                                         shuffle=True,
                                                         num_workers=8)
-    taskonomy_testset = TaskonomyDataset('./dataloader_csv/tiny_taskonomy_autoencoder_test.csv',
-                                         resize256 = True,
-                                         transform=taskonomy_transform)
+    taskonomy_testset = TaskonomyDatasetAutoencoder('../data/tiny_taskonomy_rgb_test.csv',
+                                                '/rgb',
+                                                'rgb.png',
+                                                resize256 = True,
+                                                transform=taskonomy_transform,
+                                                brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=True,
+                                                       shuffle=False,
                                                        num_workers=8)
 
     criterion = nn.L1Loss()
