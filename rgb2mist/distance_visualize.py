@@ -48,8 +48,8 @@ parser.add_argument('--shuffle', action='store_true', default=False)
 args = parser.parse_args()
 
 num_classes = 1
-ckpt = './checkpoints/rgb2depth-ckpt.pth'
-best = './checkpoints/rgb2depth-best.pth'
+ckpt = './checkpoints/rgb2mist-ckpt.pth'
+best = './checkpoints/rgb2mist-best.pth'
 
 def main():
     taskonomy_transform = transforms.Compose([transforms.ToTensor(),
