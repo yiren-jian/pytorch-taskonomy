@@ -39,7 +39,7 @@ parser.add_argument('--resume', action='store_true')
 parser.add_argument('--brenta', action='store_true')
 args = parser.parse_args()
 
-num_classes = 365
+num_classes = 63
 if os.path.isdir('./checkpoints') == False:
     os.makedirs('./checkpoints')
 ckpt = './checkpoints/class_places-ckpt.pth'
