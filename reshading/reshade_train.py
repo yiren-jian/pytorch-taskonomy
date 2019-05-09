@@ -70,7 +70,6 @@ def main():
                                                        shuffle=True,
                                                        num_workers=8)
 
-    # Define the loss function for different tasks.
     criterion = nn.L1Loss()
 
     device = torch.device(args.device)
