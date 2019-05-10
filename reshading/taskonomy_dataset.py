@@ -3,7 +3,7 @@ from __future__ import print_function
 from PIL import Image
 import imageio
 from matplotlib import pyplot as plt
-# plt.switch_backend('agg')
+plt.switch_backend('agg')
 
 import argparse
 import numpy as np
@@ -85,7 +85,7 @@ class TaskonomyDatasetReshade(torch.utils.data.Dataset):
             data = self.transform(image)
 
         target = transforms.ToTensor()(target_image)
-        target = target[0].unsqueeze(dim=0)
+        target = target[0] # target now has size (256, 256), instead of (1, 256, 256)
         return data, target, idx
 
     def __len__(self):

@@ -142,7 +142,6 @@ def train(epoch, trainloader, model, optimizer, criterion):
             targets = targets.unsqueeze(dim=1)
             images, targets = images.to('cuda'), targets.to('cuda')
 
-
             # forward + backward + optimize
             outputs = model(images)
             loss = criterion(outputs, targets)
