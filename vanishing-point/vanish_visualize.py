@@ -80,7 +80,7 @@ def main():
         # Load checkpoint.
         print('==> Resuming from checkpoint..')
         assert os.path.isdir('checkpoints'), 'Error: no checkpoint directory found!'
-        checkpoint = torch.load(ckpt)
+        checkpoint = torch.load(best)
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['model_state'])
         model = torch.nn.DataParallel(model).to(device)
@@ -106,17 +106,36 @@ def main():
     targets = targets.numpy()
     preds = outputs.data.cpu().numpy()
 
-    plt.figure(1)
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure(figsize=(50,10))
+    for i in range(4):
+        ax = fig.add_subplot(1,4,i+1, projection='3d')
+        A,B,C,D,E,F,H,I,J = targets[i]
+        a,b,c,d,e,f,h,i,j = preds[i]
+        ax.quiver(0,0,0,A,B,C,length=1.0, colors='red')
+        ax.quiver(0,0,0,D,E,F,length=1.0, colors='red')
+        ax.quiver(0,0,0,H,I,J,length=1.0, colors='red')
+        ax.quiver(0,0,0,a,b,c,length=1.0, colors='blue')
+        ax.quiver(0,0,0,d,e,f,length=1.0, colors='blue')
+        ax.quiver(0,0,0,h,i,j,length=1.0, colors='blue')
+        ax.set_xlim(-1,1)
+        ax.set_ylim(-1,1)
+        ax.set_zlim(-1,1)
+
+    plt.savefig("demo.png")
+
+    plt.figure(2)
     for i in range(args.test_batch):
         # Original image
-        plt.subplot(3,args.test_batch,i+1)           # (3,256,256) --> (256,256,3)
+        plt.subplot(1,args.test_batch,i+1)
         img = Image.open(taskonomy_testframe.iloc[idxs[i],0])
         img.thumbnail((256,256))
         plt.imshow(img)
         plt.axis('off')
 
     plt.show()
-    plt.savefig('demo.png', dpi=400)
+    plt.savefig('images.png', dpi=400)
 
 if __name__ == '__main__':
     main()
