@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from PIL import Image
 from matplotlib import pyplot as plt
-# plt.switch_backend('agg')
+plt.switch_backend('agg')
 
 import argparse
 import numpy as np
