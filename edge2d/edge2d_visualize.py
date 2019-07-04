@@ -18,8 +18,7 @@ from models.encoder import encoder8x16x16
 from models.decoder import decoder256x256
 from models.encoder_decoder import EncoderDecoder
 
-from taskonomy_dataset import TaskonomyDatasetImg2Img
-from utils.metrics import runningScore
+from taskonomy_dataset import TaskonomyDatasetEdge2d
 
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -39,6 +38,7 @@ if not sys.warnoptions:
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', default='cuda', type=str)
+parser.add_argument('--num_workers', default=8, type=int)
 parser.add_argument('--train_batch', default=32, type=int)
 parser.add_argument('--test_batch', default=4, type=int)
 parser.add_argument('--epochs', default=30, type=int)
@@ -48,29 +48,39 @@ parser.add_argument('--brenta', action='store_true')
 parser.add_argument('--shuffle', action='store_true', default=False)
 args = parser.parse_args()
 
-num_classes = 3
-ckpt = './checkpoints/normal-ckpt.pth'
-best = './checkpoints/normal-best.pth'
+num_classes = 1
+ckpt = './checkpoints/rgb2edge2d-ckpt.pth'
+best = './checkpoints/rgb2edge2d-best.pth'
 
 def main():
     taskonomy_transform = transforms.Compose([transforms.ToTensor(),
                                               transforms.Normalize((0.5456, 0.5176, 0.4863),
                                                                    (0.1825, 0.1965, 0.2172))])
-    taskonomy_testset = TaskonomyDatasetImg2Img('../data/tiny_taskonomy_rgb_test.csv',
-                                                '/normal',
-                                                'normal.png',
+    taskonomy_trainset = TaskonomyDatasetEdge2d('../data/tiny_taskonomy_rgb_train.csv',
+                                                 '/edge_texture',
+                                                 'edge_texture.png',
+                                                 resize256 = True,
+                                                 transform=taskonomy_transform,
+                                                 brenta = args.brenta)
+    taskonomy_trainloader = torch.utils.data.DataLoader(taskonomy_trainset,
+                                                        batch_size=args.train_batch,
+                                                        shuffle=True,
+                                                        num_workers=args.num_workers)
+    taskonomy_testset = TaskonomyDatasetEdge2d('../data/tiny_taskonomy_rgb_test.csv',
+                                                '/edge_texture',
+                                                'edge_texture.png',
                                                 resize256 = True,
                                                 transform=taskonomy_transform,
                                                 brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=args.shuffle,
-                                                       num_workers=8)
+                                                       shuffle=True,
+                                                       num_workers=args.num_workers)
 
+    taskonomy_testframe = pd.read_csv('../data/tiny_taskonomy_rgb_test.csv', delimiter=' ')
     # Define the loss function for different tasks.
     criterion = nn.L1Loss()
 
-    taskonomy_testframe = pd.read_csv('../data/tiny_taskonomy_rgb_test.csv', delimiter=' ')
     device = torch.device(args.device)
     model = EncoderDecoder(encoder8x16x16(), decoder256x256(num_output_channels=num_classes))
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
@@ -96,43 +106,39 @@ def main():
     model.eval()
 
     dataiters = iter(taskonomy_testloader)
-    images, targets, idxs = next(dataiters)
+    images, labels, idxs = next(dataiters)
     idxs = idxs.numpy()
     with torch.no_grad():
         images = images.to(device)
         outputs = model(images)
 
     images = images.cpu().numpy()
-    targets = targets.numpy()
-    preds = outputs.data.cpu().numpy()
+    labels = labels.squeeze(dim=1).numpy()
+    pred = outputs.data.cpu().squeeze(dim=1).numpy()
 
     plt.figure(1)
     for i in range(args.test_batch):
         # Original image
-        plt.subplot(3,args.test_batch,i+1)           # (3,256,256) --> (256,256,3)
+        plt.subplot(3,args.test_batch,i+1)
         img = Image.open(taskonomy_testframe.iloc[idxs[i],0])
-        img.thumbnail((256,256))
         plt.imshow(img)
         plt.axis('off')
 
         # Ground truth
         plt.subplot(3,args.test_batch,i+args.test_batch+1)
-        target = targets[i]
-        target = np.transpose(target, (1,2,0))         # (3,256,256) --> (256,256,3)
-        plt.imshow(target, cmap=plt.get_cmap('hot'), vmin=-1, vmax=1)
-        #plt.colorbar()
+        label = labels[i]
+        plt.imshow(label, cmap=plt.get_cmap('hot'), vmin=0, vmax=1)
+        plt.colorbar()
         plt.axis('off')
 
-        # Predicted value
+        # Predicted depth
         plt.subplot(3,args.test_batch,i+2*args.test_batch+1)
-        pred = preds[i]
-        pred = np.transpose(pred, (1,2,0))                 # (3,256,256) --> (256,256,3)
-        plt.imshow(pred, cmap=plt.get_cmap('hot'), vmin=-1, vmax=1)
-        #plt.colorbar()
+        plt.imshow(pred[i], cmap=plt.get_cmap('hot'), vmin=0, vmax=1)
+        plt.colorbar()
         plt.axis('off')
 
     plt.show()
-    plt.savefig('demo.png', dpi=400)
+    plt.savefig('demo.png', dpi=300)
 
 
 

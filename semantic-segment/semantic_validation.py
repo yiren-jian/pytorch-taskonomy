@@ -81,7 +81,7 @@ def main():
         # Load checkpoint.
         print('==> Resuming from checkpoint..')
         assert os.path.isdir('checkpoints'), 'Error: no checkpoint directory found!'
-        checkpoint = torch.load(ckpt)
+        checkpoint = torch.load(best)
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['model_state'])
         model = torch.nn.DataParallel(model).to(device)

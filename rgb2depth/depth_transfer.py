@@ -51,7 +51,7 @@ parser.add_argument('--source', default='depth', type=str, choices=[
                                                                     ])
 args = parser.parse_args()
 
-def check_source_task():
+def load_source_task():
     if args.source == 'autoencoder':
         source_num_classes = 3
         source = '../autoencoder/checkpoints/autoencoder-best.pth'
@@ -123,7 +123,8 @@ def main():
     device = torch.device(args.device)
 
     #################### Load the source task model ####################
-    source_model = EncoderDecoder(encoder8x16x16(), decoder256x256(num_output_channels=source_num_classes))
+    source_num_classes, source, source_decoder = load_source_task()
+    source_model = EncoderDecoder(encoder8x16x16(), source_decoder(num_output_channels=source_num_classes))
     print('[INFO] Loading pre-trained source task model.')
     source_model.load_state_dict(torch.load(source)['model_state'])
     ####################################################################

@@ -17,8 +17,7 @@ from models.encoder import encoder8x16x16
 from models.decoder import decoder256x256
 from models.encoder_decoder import EncoderDecoder
 
-from taskonomy_dataset import TaskonomyDatasetImg2Img
-from utils.metrics import runningScore
+from taskonomy_dataset import TaskonomyDatasetEdge2d
 
 import os
 import time
@@ -41,19 +40,19 @@ parser.add_argument('--resume', action='store_true')
 parser.add_argument('--brenta', action='store_true')
 args = parser.parse_args()
 
-num_classes = 3
+num_classes = 1
 if os.path.isdir('./checkpoints') == False:
     os.makedirs('./checkpoints')
-ckpt = './checkpoints/normal-ckpt.pth'
-best = './checkpoints/normal-best.pth'
+ckpt = './checkpoints/rgb2edge2d-ckpt.pth'
+best = './checkpoints/rgb2edge2d-best.pth'
 
 def main():
     taskonomy_transform = transforms.Compose([transforms.ToTensor(),
                                               transforms.Normalize((0.5456, 0.5176, 0.4863),
                                                                    (0.1825, 0.1965, 0.2172))])
-    taskonomy_trainset = TaskonomyDatasetImg2Img('../data/tiny_taskonomy_rgb_train.csv',
-                                                 '/normal',
-                                                 'normal.png',
+    taskonomy_trainset = TaskonomyDatasetEdge2d('../data/tiny_taskonomy_rgb_train.csv',
+                                                 '/edge_texture',
+                                                 'edge_texture.png',
                                                  resize256 = True,
                                                  transform=taskonomy_transform,
                                                  brenta = args.brenta)
@@ -61,17 +60,18 @@ def main():
                                                         batch_size=args.train_batch,
                                                         shuffle=True,
                                                         num_workers=args.num_workers)
-    taskonomy_testset = TaskonomyDatasetImg2Img('../data/tiny_taskonomy_rgb_test.csv',
-                                                '/normal',
-                                                'normal.png',
+    taskonomy_testset = TaskonomyDatasetEdge2d('../data/tiny_taskonomy_rgb_test.csv',
+                                                '/edge_texture',
+                                                'edge_texture.png',
                                                 resize256 = True,
                                                 transform=taskonomy_transform,
                                                 brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=False,
+                                                       shuffle=True,
                                                        num_workers=args.num_workers)
 
+    # Define the loss function for different tasks.
     criterion = nn.L1Loss()
 
     device = torch.device(args.device)
@@ -140,6 +140,8 @@ def train(epoch, trainloader, model, optimizer, criterion):
         for i, data in enumerate(trainloader, 0):
             # get the inputs
             images, targets, idxs = data
+            # keep targets with shape [N,1,h,w]
+            targets = targets.unsqueeze(dim=1)
             images, targets = images.to('cuda'), targets.to('cuda')
 
 
@@ -179,6 +181,8 @@ def validation(testloader, model, criterion):
             bar.set_description('Testing:')
             for i, (images, targets, idxs) in enumerate(testloader):
                 images = images.to('cuda')
+                # keep targets with shape [N,1,h,w]
+                targets = targets.unsqueeze(dim=1)
                 targets = targets.to('cuda')
 
                 outputs = model(images)
