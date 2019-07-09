@@ -74,7 +74,7 @@ def main():
                                                 brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=True,
+                                                       shuffle=args.shuffle,
                                                        num_workers=args.num_workers)
 
     taskonomy_testframe = pd.read_csv('../data/tiny_taskonomy_rgb_test.csv', delimiter=' ')
@@ -139,7 +139,6 @@ def main():
 
     plt.show()
     plt.savefig('demo.png', dpi=300)
-
 
 
 if __name__ == '__main__':

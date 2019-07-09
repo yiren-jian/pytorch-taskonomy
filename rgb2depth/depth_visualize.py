@@ -64,7 +64,7 @@ def main():
                                                 brenta = args.brenta)
     taskonomy_testloader = torch.utils.data.DataLoader(taskonomy_testset,
                                                        batch_size=args.test_batch,
-                                                       shuffle=True,
+                                                       shuffle=args.shuffle,
                                                        num_workers=8)
 
     taskonomy_testframe = pd.read_csv('../data/tiny_taskonomy_rgb_test.csv', delimiter=' ')
