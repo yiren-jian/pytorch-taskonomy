@@ -76,7 +76,8 @@ def main():
 
     device = torch.device(args.device)
     model = EncoderDecoder(encoder8x16x16(), decoder256x256(num_output_channels=num_classes))
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
+    # optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
+    optimizer = optim.SGD(model.parameters(), lr=0.1)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5,10], gamma=0.1)
     best_loss = float('inf')
 
