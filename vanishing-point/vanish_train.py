@@ -28,7 +28,6 @@ import warnings
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--device', default='cuda', type=str)
 parser.add_argument('--train_batch', default=32, type=int)
