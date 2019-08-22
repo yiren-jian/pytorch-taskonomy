@@ -110,7 +110,10 @@ def main():
     for i in range(args.test_batch):
         # Original image
         plt.subplot(3,args.test_batch,i+1)           # (3,256,256) --> (256,256,3)
-        img = Image.open(taskonomy_testframe.iloc[idxs[i],0])
+        if args.brenta:
+            img = Image.open(taskonomy_testframe.iloc[idxs[i],0].replace('/home/yiren/datasets', '/home/brenta/scratch/data'))
+        else:
+            img = Image.open(taskonomy_testframe.iloc[idxs[i],0])
         img.thumbnail((256,256))
         plt.imshow(img)
         plt.axis('off')
